@@ -1,0 +1,23 @@
+name: Bring up service to check if it can run
+
+on: push
+
+jobs:
+    docker-compose:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/setup-go@v4
+          with:
+            go-version: 'stable'
+        - run: go install github.com/rakyll/hey@latest
+        - uses: actions/checkout@v3
+        - name: Docker Compose setup
+          run: docker compose up --wait --detach --quiet-pull
+        - run: docker network list
+        - name: Dump docker container logs on failure
+          if: failure()
+          run: docker compose logs
+        - name: Load test envoy
+          run: hey http://localhost:8080
+        - name: Load test upstream
+          run: hey http://localhost:8081
