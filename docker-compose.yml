@@ -1,6 +1,6 @@
 services:
   manager:
-    build: .
+    build: app/
     expose:
       - 8080
     ports:

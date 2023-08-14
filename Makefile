@@ -1,7 +1,8 @@
 NAME = $(shell basename $(PWD))
 
 up: down
-	docker compose up -d --build
+	docker compose up -d --build --wait
+	curl localhost:80
 
 logs:
 	docker compose logs
