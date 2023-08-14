@@ -2,7 +2,7 @@ NAME = $(shell basename $(PWD))
 
 up: down
 	docker compose up -d --build --wait
-	curl localhost:80
+	curl localhost:8081
 
 logs:
 	docker compose logs
@@ -12,3 +12,6 @@ shell: up
 
 down:
 	docker compose down -v --remove-orphans
+
+clean:
+	rm docker-compose.yml Caddyfile*

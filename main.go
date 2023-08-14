@@ -54,7 +54,7 @@ func main() {
 
 func generateCaddyfile(n int) error {
 	listenPort := 8080
-	for i := 1; i < n+1; i++ {
+	for i := 1; i < n; i++ {
 		listenPort++
 		slog.Info("generating caddyfile", "n", i, "listenPort", listenPort)
 		config := fmt.Sprintf(`
@@ -65,7 +65,7 @@ func generateCaddyfile(n int) error {
 	format console
 	}
 	reverse_proxy lb%d:%d
-	}`, listenPort, i, i, listenPort+1)
+	}`, listenPort, i, i+1, listenPort+1)
 		f, err := os.Create(fmt.Sprintf("Caddyfile%d", i))
 		if err != nil {
 			return err
@@ -75,6 +75,25 @@ func generateCaddyfile(n int) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// write the last one to point to manager
+	config := fmt.Sprintf(`:%d {
+	# n = %d
+	log {
+	output stderr
+	format console
+	}
+	reverse_proxy manager:8080
+	}`, listenPort+1, n)
+	f, err := os.Create(fmt.Sprintf("Caddyfile%d", n))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.WriteString(config)
+	if err != nil {
+		return err
 	}
 	return nil
 }

@@ -1,8 +1,0 @@
-:8081 {
-	log {
-	output stderr
-	format console
-	}
-
-	reverse_proxy manager:8080
-}
