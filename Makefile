@@ -13,5 +13,5 @@ shell: up
 down:
 	docker compose down -v --remove-orphans
 
-clean:
+clean: down
 	rm docker-compose.yml Caddyfile*

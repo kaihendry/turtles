@@ -11,13 +11,20 @@ jobs:
             go-version: 'stable'
         - run: go install github.com/rakyll/hey@latest
         - uses: actions/checkout@v3
+        - run: go run . -n 5
         - name: Docker Compose setup
           run: docker compose up --wait --detach --quiet-pull
-        - run: docker network list
         - name: Dump docker container logs on failure
           if: failure()
           run: docker compose logs
-        - name: Load test envoy
+        - name: Load test
           run: hey http://localhost:8080
-        - name: Load test upstream
+        - name: Load test via proxies
+          run: hey http://localhost:8081
+        - run: make clean
+        - run: go run . -n 20
+        - run: docker compose up --wait --detach --quiet-pull
+        - name: Load test
+          run: hey http://localhost:8080
+        - name: Load test via proxies
           run: hey http://localhost:8081
