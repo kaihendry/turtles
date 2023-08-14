@@ -54,22 +54,29 @@ func main() {
 
 func generateCaddyfile(n int) error {
 	listenPort := 8080
-	config := fmt.Sprintf(`
-	:%d {
-		# n = %d
-		log {
-		output stderr
-		format console
-		}
-		reverse_proxy lb%d:%d
-	}`, listenPort, n, n, listenPort+1)
-	f, err := os.Create(fmt.Sprintf("Caddyfile%d", n))
-	if err != nil {
-		return err
+	for i := 1; i < n+1; i++ {
+		listenPort++
+		slog.Info("generating caddyfile", "n", i, "listenPort", listenPort)
+		config := fmt.Sprintf(`
+:%d {
+	# n = %d
+	log {
+	output stderr
+	format console
 	}
-	defer f.Close()
-	_, err = f.WriteString(config)
-	return err
+	reverse_proxy lb%d:%d
+	}`, listenPort, i, i, listenPort+1)
+		f, err := os.Create(fmt.Sprintf("Caddyfile%d", i))
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = f.WriteString(config)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func generateDockerCompose(n int) error {
@@ -82,15 +89,19 @@ func generateDockerCompose(n int) error {
 			},
 			"lb": {
 				Image:   "caddy:latest",
-				Volumes: []string{"./Caddyfile:/etc/caddy/Caddyfile"},
-				Ports:   []string{"80:80"},
-			},
-			"lb2": {
-				Image:   "caddy:latest",
-				Volumes: []string{"./Caddyfile2:/etc/caddy/Caddyfile"},
-				Ports:   []string{"80:80"},
+				Volumes: []string{"./Caddyfile1:/etc/caddy/Caddyfile"},
+				Ports:   []string{"8081:8081"},
 			},
 		},
+	}
+
+	// when n > 1, we need to add more services
+	for i := 2; i <= n; i++ {
+		dockerCompose.Services[fmt.Sprintf("lb%d", i)] = Service{
+			Image:   "caddy:latest",
+			Volumes: []string{fmt.Sprintf("./Caddyfile%d:/etc/caddy/Caddyfile", i)},
+			Expose:  []int{8080 + i - 1},
+		}
 	}
 
 	data, err := yaml.Marshal(&dockerCompose)
