@@ -22,23 +22,24 @@ jobs:
           if: failure()
           run: docker compose logs
         - name: Load test
-          run:  echo "GET http://localhost:8080" | vegeta attack -duration=5s | tee results.bin | vegeta plot > direct.html
+          run:  echo "GET http://localhost:8080" | vegeta attack -name=direct -duration=5s > direct.bin
         - name: Load test via proxies
-          run: echo "GET http://localhost:8081" | vegeta attack -duration=5s | tee results.bin | vegeta plot > proxied.html
+          run: echo "GET http://localhost:8081" | vegeta attack -name=one -duration=5s > one.bin
         - run: make clean
         - run: go run . -n 2
         - run: docker compose up --wait --detach --quiet-pull
         - name: Load test
-          run: echo "GET http://localhost:8080" | vegeta attack -duration=5s | tee results.bin | vegeta plot > d2-sanity.html
+          run: echo "GET http://localhost:8080" | vegeta attack -name=d2-sanity -duration=5s > d2-sanity.bin
         - name: Load test via proxies 2
-          run: echo "GET http://localhost:8081" | vegeta attack -duration=5s | tee results.bin | vegeta plot > two.html
+          run: echo "GET http://localhost:8081" | vegeta attack -name=two -duration=5s > two.bin
         - run: make clean
         - run: go run . -n 5
         - run: docker compose up --wait --detach --quiet-pull
         - name: Load test
-          run: echo "GET http://localhost:8080" | vegeta attack -duration=5s | tee results.bin | vegeta plot > d5-sanity.html
+          run: echo "GET http://localhost:8080" | vegeta attack -name=d5-sanity -duration=5s > d5-sanity.bin
         - name: Load test via proxies 5
-          run: echo "GET http://localhost:8081" | vegeta attack -duration=5s | tee results.bin | vegeta plot > five.html
+          run: echo "GET http://localhost:8081" | vegeta attack -name=five -duration=5s > five.bin
+        - run: vegeta plot *.bin > report.html
         - uses: actions/upload-artifact@v3
           with:
             path: "*.html"
