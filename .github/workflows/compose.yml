@@ -9,7 +9,11 @@ jobs:
         - uses: actions/setup-go@v4
           with:
             go-version: 'stable'
-        - run: go install github.com/rakyll/hey@latest
+        - name: Install Vegeta
+          run: |
+              wget https://github.com/tsenart/vegeta/releases/download/v12.8.4/vegeta_12.8.4_linux_amd64.tar.gz
+              tar xfz vegeta_12.8.4_linux_amd64.tar.gz
+              sudo mv vegeta /usr/local/bin/vegeta
         - uses: actions/checkout@v3
         - run: go run .
         - name: Docker Compose setup
@@ -18,20 +22,23 @@ jobs:
           if: failure()
           run: docker compose logs
         - name: Load test
-          run: hey http://localhost:8080
+          run:  echo "GET http://localhost:8080" | vegeta attack -duration=5s | tee results.bin | vegeta plot > direct.html
         - name: Load test via proxies
-          run: hey http://localhost:8081
+          run: echo "GET http://localhost:8081" | vegeta attack -duration=5s | tee results.bin | vegeta plot > proxied.html
         - run: make clean
         - run: go run . -n 2
         - run: docker compose up --wait --detach --quiet-pull
         - name: Load test
-          run: hey http://localhost:8080
+          run: echo "GET http://localhost:8080" | vegeta attack -duration=5s | tee results.bin | vegeta plot > d2-sanity.html
         - name: Load test via proxies 2
-          run: hey http://localhost:8081
+          run: echo "GET http://localhost:8081" | vegeta attack -duration=5s | tee results.bin | vegeta plot > two.html
         - run: make clean
         - run: go run . -n 5
         - run: docker compose up --wait --detach --quiet-pull
         - name: Load test
-          run: hey http://localhost:8080
+          run: echo "GET http://localhost:8080" | vegeta attack -duration=5s | tee results.bin | vegeta plot > d5-sanity.html
         - name: Load test via proxies 5
-          run: hey http://localhost:8081
+          run: echo "GET http://localhost:8081" | vegeta attack -duration=5s | tee results.bin | vegeta plot > five.html
+        - uses: actions/upload-artifact@v3
+          with:
+            path: "*.html"
